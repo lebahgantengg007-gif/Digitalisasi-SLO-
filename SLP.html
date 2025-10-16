@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulir Multi-Langkah Dinamis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> 
+    <script src="path/to/your/script.js"></script>
+
+    <style>
+        /* Styling Umum */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #9acced;
+            margin: 0 20px 20px 0;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #343a40;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        h3 {
+            margin-top: 20px;
+            color: #495057;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: #6c757d;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+
+        /* KONTROL MULTI-LANGKAH */
+        .form-step.hidden {
+            display: none;
+        }
+
+        /* Step Indicator */
+        .steps-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+            padding: 0 50px;
+            color: #6c757d;
+        }
+
+        .steps-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background-color: #ccc;
+            z-index: 1;
+        }
+
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+            color: #6c757d;
+            font-size: 14px;
+            z-index: 2;
+        }
+
+        .step .circle {
+            width: 30px;
+            height: 30px;
+            background-color: #ccc;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 5px;
+            font-weight: bold;
+            border: 2px solid #ccc;
+        }
+
+        .steps-indicator .step.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+        /* Styling untuk lingkaran (circle) indikator langkah */
+        .steps-indicator .step .circle {
+            /* Gaya default lingkaran (misalnya, abu-abu muda) */
+            background-color: #e9ecef; 
+            color: #6c757d;
+            border: 1px solid #ced4da;
+        }
+        /* Styling untuk lingkaran langkah yang sedang aktif */
+        .steps-indicator .step.active .circle {
+            background-color: #007bff; /* Latar belakang lingkaran menjadi biru */
+            color: #fff; /* Angka di dalam lingkaran menjadi putih */
+            border-color: #007bff;
+        }
+
+        /* Mengubah warna langkah aktif dan lingkaran */
+        .form-step:not(.hidden) .steps-indicator .step[data-step="1"].active .circle,
+        .form-step:not(.hidden) .steps-indicator .step[data-step="2"].active .circle,
+        .form-step:not(.hidden) .steps-indicator .step[data-step="3"].active .circle {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .form-step:not(.hidden) .steps-indicator .step[data-step="1"].active,
+        .form-step:not(.hidden) .steps-indicator .step[data-step="2"].active,
+        .form-step:not(.hidden) .steps-indicator .step[data-step="3"].active {
+            color: #000;
+            font-weight: bold;
+        }
+
+
+        /* Navigasi Tab (Langkah 1) */
+        th.table-wrapper { overflow-x: auto;text-align: center; width:auto; }
+        th.table-wrapper1 { overflow-x: auto;text-align: center; width: auto; }
+        th.table-wrapper2 { text-align: center; width: auto;}
+        table { width: 100%; border-collapse: collapse;}
+        th, td { padding: 10px; text-align: left; border: 1px solid #e0e0e0; vertical-align: middle; }
+        thead { background-color: #0056b3; color: white; }
+        td:first-child {width: 25%;}
+
+
+
+
+        /* Layout Tabel Form (Langkah 1) */
+        tr.group-header {background-color: #e3dada;font-weight: bold;}
+        input[type="text"], input[type="number"], input[type="date"], textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc;
+            border-radius: 6px; 
+            font-size: 1rem; 
+            box-sizing: border-box;}
+
+        .input-group label {
+            width: 100%;
+            font-size: 0.9em;}
+
+
+        .table-form {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #dee2e6;
+            margin-bottom: 30px;
+        }
+        .radio-group label {
+            margin-right: 15px;
+            display: inline-flex;
+            align-items: center;}
+        .radio-group input[type="radio"] {
+            margin-right: 5px;}
+
+        .radio-group2 label {
+            margin-right: 15px;
+            display: inline-flex;
+            align-items: center;}
+        .radio-group2 input[type="radio"] {
+            margin-right: 5px;}
+
+            
+
+        /* radio langkah 1*/
+            /* 1. Sembunyikan radio button bawaan */
+            .radio-group input[type="radio"] {
+                /* Atur input agar tidak terlihat, tapi tetap dapat digunakan (aksesibilitas) */
+                position: absolute;
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            /* 2. Gaya untuk Label yang Bertindak sebagai Kotak Penilaian */
+            /* Timpa gaya label yang lama di .radio-group label */
+            .radio-group label {
+                display: inline-block; /* Pastikan ini bukan flex/inline-flex agar mudah ditata */
+                padding: 5px 10px;
+                margin: 2px 5px 2px 0; /* Memberi jarak antar tombol */
+                border: 1px solid #ccc; /* Border abu-abu standar */
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                background-color: #f4f4f4; /* Latar belakang abu-abu muda default */
+                color: #555;
+                transition: all 0.2s ease;
+                font-weight: normal; /* Kembali ke normal, karena ini label visual */
+            }
+            /* 3. Gaya saat kursor mengarah (opsional) */
+            .radio-group label:hover {
+                background-color: #e9e9e9;
+                border-color: #aaa;
+            }
+            /* 4. Gaya AKTIF (Terisi/Checked) - Menggunakan :has() */
+            /* :has() menargetkan label yang memiliki input radio yang sedang checked di dalamnya */
+            .radio-group label:has(input[type="radio"][value="sesuai"]:checked) {
+                background-color: #4280d2; /* Warna biru saat terisi */
+                color: white; /* Teks putih */
+                border-color: #4280d2;
+                font-weight: 600; /* Teks lebih tebal untuk penekanan */
+            }
+            /* Menargetkan label yang memiliki radio button dengan value="tidak" yang sedang checked */
+            .radio-group label:has(input[type="radio"][value="tidak"]:checked) {
+                background-color: #dd747e; /* Warna Merah yang Umum (Bootstrap danger) */
+                color: white; 
+                border-color: #dd747e;
+            }
+            /* 5. Perbaikan untuk radio-buttons di Kesimpulan (jika ingin tetap terlihat sebagai radio tradisional) */
+            /* Pastikan label radio Kesimpulan tidak terpengaruh */
+            .radio-buttons label {
+                display: inline-flex; /* Kembalikan ke format tradisional jika diperlukan */
+                padding: 0;
+                border: none;
+                background-color: transparent;
+                font-weight: normal;
+            }
+            .radio-buttons input[type="radio"] {
+                /* Mengembalikan tampilan radio button Kesimpulan */
+                position: static;
+                opacity: 1;
+                width: auto;
+                height: auto;
+                margin-right: 5px;
+            }
+
+        /*Langkah 1 Kesimpulan*/
+        /* 1. Gaya AKTIF (Terisi/Checked) - Menggunakan :has() */
+            /* :has() menargetkan label yang memiliki input radio yang sedang checked di dalamnya */
+            .radio-group label:has(input[type="radio"][value="laik"]:checked) {
+                background-color: #4280d2; /* Warna biru saat terisi */
+                color: white; /* Teks putih */
+                border-color: #4280d2;
+                font-weight: 600; /* Teks lebih tebal untuk penekanan */
+            }
+            /* Menargetkan label yang memiliki radio button dengan value="tidak" yang sedang checked */
+            .radio-group label:has(input[type="radio"][value="tidak_laik"]:checked) {
+                background-color: #dd747e; /* Warna Merah yang Umum (Bootstrap danger) */
+                color: white; 
+                border-color: #dd747e;
+            }
+
+
+        /*radio langkah 2*/
+        .hidden-radio { position: absolute; opacity: 0; width: 0; height: 0;}
+        .penilaian-btn {display: inline-block;justify-content: center; padding: 2px 8px; margin: 2px 0; border: 1px solid #ccc; background-color: #f8f8f8; color: #333; font-size: 16px; cursor: pointer; border-radius: 3px; text-align: center; min-width: 50px;}
+        .penilaian-group input[value='sesuai']:checked + .penilaian-btn {background-color: #007bff; color: white; border-color: #007bff;}
+        .penilaian-group {white-space: normal;}
+        .penilaian-group label {display: block; margin: center;}
+        .penilaian-group input[value="tidak"]:checked + .penilaian-btn {
+            background-color: #dd747e;
+            border-color: #dd747e;
+        }
+        /* Layout Tabel Form (Langkah 2) */
+        th.kolom-no { width: 40px; max-width: 40px; text-align: center; padding-left: 5px; padding-right: 5px; box-sizing: border-box; table-layout: fixed;}
+        .kolom-penilaian {width: 150px; text-align: center;}
+        td.kolom-no {width: 40px; min-width: 40px; max-width: 40px; text-align: center; white-space: nowrap; box-sizing: border-box; overflow: hidden;}
+
+        /* Widths Langkah 1 */
+        .table-row input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Button Styling */
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #6c757d;
+            background-color: #f0f0f0;
+            color: #495057;
+        }
+
+        .btn-upload {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        /* Kesimpulan dan Catatan */
+        .conclusion-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+
+        .conclusion-box p {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .conclusion-box textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .radio-group label {
+            margin-right: 20px;
+            font-weight: normal;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+
+        /* Styling Spesifik Langkah 2 (Rekapitulasi) */
+        .rekap-table td:nth-child(3),
+        td.penilaian-group {
+            width: auto;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        .rekap-table .header-row {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+        }
+
+        .rekap-subheader {
+            background-color: #e9ecef !important;
+            color: #000 !important;
+        }
+
+        .rekap-table .cell {
+            padding: 10px 8px;
+            border-right: 1px solid #dee2e6;
+        }
+
+        /* Widths Langkah 2 */
+        .col-no { flex: 0.5; max-width: 50px; justify-content: center; }
+        .col-deskripsi-rekap { flex: 4; }
+        .col-penilaian-rekap { flex: 2; }
+        .col-penilaian-sub { flex: 1; justify-content: center; }
+        .col-penilaian-radio { flex: 1; justify-content: center; }
+        .col-keterangan-rekap { flex: 4; }
+
+        .rekap-data input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .rekap-data textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: none;
+            min-height: 40px;
+        }
+
+        .rekap-actions {
+            justify-content: space-between;
+        }
+
+        .rekap-conclusion .radio-group label {
+            display: inline-flex;
+            padding: 0;
+            margin: 0 15px 5px 0;
+            border: none;
+            background-color: transparent;
+            font-weight: normal;
+            font-size: 1em;
+            flex-direction: column;
+        }
+        .rekap-conclusion .radio-group input [type="radio"] {
+            position: static;
+            opacity: 1;
+            width: auto;
+            height: auto;
+            margin-right: 5px;
+        }
+
+        /*upload*/
+        .button-upload {
+            display: block; /* Agar bisa mengisi lebar */
+            padding: 8px 10px;
+            background-color: #808387; /* Warna biru */
+            color: white;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer; /* Menunjukkan bahwa ini dapat diklik */
+            font-size: 14px;
+            margin-top: 5px;}
+        .button-upload:hover {
+            background-color: #4280d2;}
+
+        /* Gaya untuk Tabel Tanda Tangan */
+        .signature-block {
+            margin-top: 25px;
+        }
+
+        .signature-block h3 {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Gaya untuk Input di dalam Tabel */
+        .signature-table input[type="text"], 
+        .signature-table input[type="date"] {
+            width: 100%;
+            height: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            border: none; /* Hilangkan border input agar cell yang terlihat punya border */
+            text-align: center;
+            background-color: transparent;
+        }
+
+        /* Gaya untuk Placeholder Tanda Tangan */
+        .ttd-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d; /* Warna abu-abu untuk teks TTD */
+            font-style: italic;
+        }
+        /* Targetkan kontainer utama Datepicker */
+        .ui-datepicker, 
+        .datepicker-dropdown {
+            transform: scale(1.2); /* Perbesar 20% */
+            transform-origin: top left; /* Agar pembesaran dimulai dari sudut kiri atas */
+            margin-bottom: 20%; /* Tambahkan margin agar tidak menimpa elemen lain setelah pembesaran */
+        }
+
+        /* Gaya untuk Modal (Pop-up) TTD */
+        .modal {
+            display: none; /* Sembunyikan secara default */
+            position: fixed; 
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4); /* Background gelap */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* Tengah-tengah secara vertikal */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Lebar modal */
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Gaya Kanvas */
+        #ttdCanvas {
+            cursor: crosshair;
+            touch-action: none; /* Penting untuk perangkat sentuh */
+            width: 100%;
+            /* Atur border yang jelas */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        /* Gaya tombol di dalam modal */
+        .modal-actions button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #saveTtdBtn {
+            background-color: #007bff;
+            color: white;
+        }
+        #clearTtdBtn {
+            background-color: #f4f4f4;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        @media print {
+            /* 1. Reset dan Atur Ulang Tata Letak Dasar */
+            body, html {
+                background-color: white !important; /* Pastikan latar belakang putih */
+                color: #000 !important;
+                /* Hapus margin agar konten mengisi halaman */
+                margin: 0;
+                padding: 0;
+                display: block;
+                font-size: 12pt; 
+                font-family: 'Times New Roman', Times, serif;/* Nonaktifkan Flexbox/Grid di body saat cetak */
+            
+            }
+
+            .container {
+                width: 98% !important;
+                max-width: none !important;
+                padding: 15px !important; /* Beri sedikit padding untuk tepi halaman */
+                box-shadow: none !important; /* Hapus bayangan */
+                border-radius: 0 !important;
+            }
+            
+            /* 2. Sembunyikan Elemen Interaktif dan Navigasi */
+            .steps-indicator, /* Indikator Langkah */
+            .form-actions,    /* Tombol Lanjut/Kembali/Kirim */
+            .btn-upload,      /* Tombol Upload File */
+            .button-upload,
+            #tambah-baris-rekap, /* Tombol Tambah Baris */
+            .ttd-btn,          /* Tombol Input Tanda Tangan */
+            .modal,
+            .modal-content,
+            .close-btn,
+            .modal-actions {
+                display: none !important;
+            }
+            
+            /* 3. Tampilkan Semua Langkah Formulir */
+            table {
+                border: 1px solid #000 !important; /* Border tabel hitam solid */
+                padding : 10px 10px !important;
+                line-height: 1,2;
+            }
+            th, td {
+                border: 1px solid #000 !important;
+                padding: 6px 8px !important; /* Padding lebih kecil untuk menghemat ruang */
+                font-size: 12pt;
+            }
+            thead th {
+                background-color: #e9ecef !important; /* Latar belakang header lebih terang */
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-weight: bold;
+                font-size: 12pt;
+            }
+            .group-header {
+                background-color: #f8f9fa !important; /* Latar sub-header lebih terang */
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .form-step {
+                /* Timpa .form-step.hidden, paksa tampilkan */
+                display: block !important; 
+                opacity: 1 !important;
+                visibility: visible !important;
+                /* Opsional: Mulai setiap langkah di halaman baru */
+                page-break-before: always; 
+            }
+            
+            /* Hapus page-break di langkah pertama agar tidak ada halaman kosong di awal */
+            .form-step:first-child {
+                page-break-before: auto; 
+            }
+
+            /* 4. Perbaikan Tampilan Input dan Data */
+            input[type="text"], 
+            input[type="number"], 
+            input[type="date"],
+            textarea {
+                /* Hapus border input agar hanya nilai yang terlihat */
+                border: none !important; 
+                padding: 0;
+                margin: 0;
+                width: 100%; 
+                box-shadow: none !important;
+                background-color: transparent !important;
+                color: #000 !important;
+                font-weight: normal !important;
+                text-align: left !important;
+                
+                /* Tambahkan garis bawah putus-putus agar nilai input terlihat jelas */
+                border-bottom: none !important;
+            }
+            
+            
+            /* 5. Tampilkan Pilihan Radio/Checkbox yang Terpilih */
+            
+            /* Atur ulang gaya tombol penilaian/radio agar menjadi teks biasa */
+            .radio-group label, .penilaian-group label {
+                display: inline-block;
+                padding: 0;
+                margin: 0;
+                border: none;
+                background-color: transparent;
+                color: black;
+                font-weight: normal;
+                cursor: default;
+            }
+            
+            /* Sembunyikan input radio agar tidak mengganggu tata letak cetak */
+            .radio-group input[type="radio"],
+            .penilaian-group input[type="radio"] {
+                display: none !important;
+            }
+            
+            /* Ganti tombol penilaian visual dengan teks biasa */
+            .penilaian-btn {
+                display: inline !important;
+                padding: 0 !important;
+                border: none !important;
+                background: transparent !important;
+                color: black !important;
+                font-size: 1em !important;
+                font-weight: normal !important;
+            }
+
+            /* Tandai item yang dipilih */
+            /* Untuk radio/penilaian yang menggunakan label:has() */
+            .radio-group label:has(input[type="radio"]:checked)::after,
+            .penilaian-group input[type="radio"]:checked + .penilaian-btn::after {
+                content: " (✓)"; /* Tambahkan tanda centang di sebelah yang dipilih */
+                font-weight: bold;
+                color: #000;
+                margin-left: 5px;
+            }
+
+            /* Hapus gaya background/warna yang mengganggu hasil cetak */
+            .radio-group label:has(input[type="radio"]:checked) {
+                background-color: transparent !important;
+                border-color: transparent !important;
+                color: black !important;
+            }
+            
+            /* 6. Tampilkan Pratinjau Tanda Tangan */
+            .ttd-placeholder {
+                /* Jika Anda menggunakan elemen img untuk pratinjau tanda tangan, 
+                pastikan pratinjau tersebut terlihat di sini. Sesuaikan selector Anda. */
+                display: block !important;
+                border: 1px solid #ccc;
+                min-height: 80px; /* Jaga agar area ttd terlihat */
+                align-items: flex-start;
+                justify-content: flex-start;
+            }
+
+            .ttd-preview img {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            /* Pastikan header dan footer tabel (thead/tfoot) berulang di setiap halaman */
+            thead {
+                display: table-header-group;
+            }
+            tfoot {
+                display: table-footer-group;
+            }
+        }
+
+        /* Styling dasar untuk input file */
+        .input-group-file {
+            display: flex; /* Untuk menata elemen sebaris */
+            flex-direction: column; /* Ubah ke kolom agar status di bawah tombol */
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .button-upload {
+            /* Menjadikan label terlihat seperti tombol */
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #007bff; /* Warna biru, sesuaikan dengan tema Anda */
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .button-upload:hover {
+            background-color: #0056b3;
+        }
+
+        .upload-status {
+            /* Styling untuk teks 'Belum ada file' / 'Foto diupload' */
+            font-size: 12px;
+            color: #6c757d; /* Warna abu-abu default */
+        }
+
+        .uploaded-image-preview {
+            /* Styling untuk preview gambar */
+            max-width: 100%; /* Batasi lebar gambar agar tidak merusak tabel */
+            height: auto;
+            max-height: 100px; /* Batasi tinggi untuk preview */
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            object-fit: contain; /* Pastikan gambar terlihat utuh */
+        }
+
+        /* Jika Anda ingin tombol dan status sebaris, gunakan ini: */
+        /*
+        .input-group-file {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        */
+    </style>
+</head>
+<body>
+ <div class="container">
+        <header>
+            <h1>Pemeriksaan Kelaikan Produksi (Batching Plant)</h1>
+            <p>Rancangan Aktualisasi Nindya Fitri Sari</p>
+        </header>
+
+        <div class="steps-indicator">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                Pengujian Mutu Campuran Beton Semen
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                Rekapitulasi Pemeriksaan
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                Validasi Pemeriksaan
+            </div>
+        </div>
+
+   <!-- #region Langkah 1-->
+        <form id="form-beton">
+            <div id="step-1" class="form-step active">
+                <section class="form-section">
+                    <h2>Langkah 1: Formulir Pengujian Mutu Campuran Beton Semen</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="table-wrapper1">Pengujian</th>
+                                <th class="table-wrapper2"></th>
+                                <th class="table-wrapper">Mix Design</th>
+                                <th class="table-wrapper">Hasil Pengukuran</th>
+                                <th class="table-wrapper">Penilaian</th>
+                                <th class="table-wrapper">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="group-header"><td colspan="6">Parameter Beton Segar</td></tr>
+                    
+                        <tr data-row="slump">
+                        <td>Slump (mm)</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="slump-min"></label>
+                                <input type="number" id="slump-min" placeholder="Min.">
+                            </div>
+                            <div class="input-group1">
+                                <label for="slump-max"></label>
+                                <input type="number" id="slump-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="slump-hasil"></label>
+                            <input type="number" id="slump-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="slump-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="slump-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="slump-keterangan"></label>
+                                <input type="text" id="slump-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="slump-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="slump-foto" name="slump-foto" accept="image/*" style="display: none;" data-max-size="5242880">
+                                <span id="slump-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-slump-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                        </td>
+                        </tr>
+
+                        <tr data-row="retensi-slump">
+                        <td>Retensi Slump</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="retensi-slump-max"></label>
+                                <input type="number" id="retensi-slump-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="retensi-slump-hasil"></label>
+                            <input type="number" id="retensi-slump-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="retensi-slump-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="retensi-slump-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="retensi-slump-keterangan"></label>
+                                <input type="text" id="retensi-slump-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="retensi-slump-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="retensi-slump-foto" name="retensi-slump-foto" accept="image/*" style="display: none;" data-max-size="5242880">
+                                <span id="retensi-slump-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-retensi-slump-foto" class="uploaded-image-preview" src="" style="display:none;"> 
+                            </div>
+                        </td>
+
+                        <tr data-row="berat">
+                        <td>Berat per meter kubik yang dihitung berdasarkan bebas rongga udara (kg/m³)</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="berat-min"></label>
+                                <input type="number" id="berat-min" placeholder="Min.">
+                            </div>
+                            <div class="input-group1">
+                                <label for="berat-max"></label>
+                                <input type="number" id="berat-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="berat-hasil"></label>
+                            <input type="number" id="berat-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="berat-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="berat-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="berat-keterangan"></label>
+                                <input type="text" id="berat-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="berat-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="berat-foto" name="berat-foto" accept="image/*" style="display: none;" data-max-size="5242880">
+                                <span id="berat-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-berat-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                        </td>
+                        </tr>
+
+                        <tr data-row="setting">
+                        <td>Setting Time</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="setting-max"></label>
+                                <input type="number" id="setting-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="setting-hasil"></label>
+                            <input type="number" id="setting-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="setting-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="setting-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="setting-keterangan"></label>
+                                <input type="text" id="setting-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="setting-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="setting-foto" name="setting-foto" accept="image/*" style="display: none;" data-max-size="5242880"> 
+                                <span id="setting-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-setting-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                            </td>
+                        </tr>
+
+                        <tr data-row="temperatur">
+                        <td>Temperatur Beton Segar (°C)</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="temperatur-max"></label>
+                                <input type="number" id="temperatur-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="temperatur-hasil"></label>
+                            <input type="number" id="temperatur-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="temperatur-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="temperatur-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="temperatur-keterangan"></label>
+                                <input type="text" id="temperatur-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="temperatur-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="temperatur-foto" name="temperatur-foto" accept="image/*" style="display: none;" data-max-size="5242880"> 
+                                <span id="temperatur-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-temperatur-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                        </td>
+                        </tr>
+
+                        <tr class="group-header"><td colspan="6">Parameter Beton Keras</td></tr>
+
+                        <tr data-row="kuat-lentur">
+                        <td>Kuat Lentur pada perkerasan beton semen (pengendalian produksi)</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="kuat-lentur-min"></label>
+                                <input type="number" id="kuat-lentur-min" placeholder="Min.">
+                            </div>
+                            <div class="input-group1">
+                                <label for="kuat-lentur-max"></label>
+                                <input type="number" id="kuat-lentur-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="kuat-lentur-hasil"></label>
+                            <input type="number" id="kuat-lentur-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="kuat-lentur-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="kuat-lentur-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="kuat-lentur-keterangan"></label>
+                                <input type="text" id="kuat-lentur-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="kuat-lentur-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="kuat-lentur-foto" name="kuat-lentur-foto" accept="image/*" style="display: none;" data-max-size="5242880"> 
+                                <span id="kuat-lentur-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-kuat-lentur-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                        </td>
+                        </tr>
+
+                        <tr data-row="kuat-tekan">
+                        <td>Kuat Tekan rata-rata pada umur 7 (tujuh) hari untuk setiap benda uji, berdasarkan kuat rata-rata dari pengujian semua benda uji yang dibandingkan, %</td>
+                        <td>
+                            <div class="input-group1">
+                                <label for="kuat-tekan-min"></label>
+                                <input type="number" id="kuat-tekan-min" placeholder="Min.">
+                            </div>
+                            <div class="input-group1">
+                                <label for="kuat-tekan-max"></label>
+                                <input type="number" id="kuat-tekan-max" placeholder="Maks.">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for=""></label>
+                                <input type="number" id="" placeholder="" >
+                            </div>
+                        </td>  
+                        <td>
+                           <div class="input-group">
+                            <label for="kuat-tekan-hasil"></label>
+                            <input type="number" id="kuat-tekan-hasil" placeholder="Hasil..."></div>
+                        </td>
+                        <td class="radio-group">
+                            <label><input type="radio" name="kuat-tekan-penilaian" value="sesuai" disabled>Sesuai</label><br>
+                            <label><input type="radio" name="kuat-tekan-penilaian" value="tidak" disabled>Tidak</label>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <label for="kuat-tekan-keterangan"></label>
+                                <input type="text" id="kuat-tekan-keterangan" placeholder="Ket..."> 
+                            </div>
+                            <div class="input-group-file">
+                                <label for="kuat-tekan-foto" class="button-upload">Upload Foto</label>
+                                <input type="file" id="kuat-tekan-foto" name="kuat-tekan-foto" accept="image/*" style="display: none;" data-max-size="5242880"> 
+                                <span id="kuat-tekan-foto-status" class="upload-status">Belum ada file.</span>
+                                <img id="preview-kuat-tekan-foto" class="uploaded-image-preview" src="" style="display:none;">
+                            </div>
+                            </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="conclusion-box">
+                    <h3>Kesimpulan Pemeriksaan Mutu Campuran Produksi:</h3>
+                    <div class="radio-group">
+                        <label><input type="radio" name="kesimpulan_mutu" value="laik" disabled>Laik</label>
+                        <label><input type="radio" name="kesimpulan_mutu" value="tidak_laik" disabled>Tidak Laik</label>
+                    </div>
+                    <p>Catatan Pemeriksaan Pengujian Produk</p>
+                    <textarea rows="4"></textarea>
+                </div>
+                <div class="form-actions">
+                        <button type="button" id="simpanPdfBtn" style="margin-right: 10px;">Simpan ke PDF</button>
+                        <button type="button" class="btn-primary next-step" data-next="step-2">Lanjut</button>
+                </div>
+                </section>
+            </div>
+
+<!-- #region Langkah 2-->
+            <div id="step-2" class="form-step hidden">
+                <section class="form-section">
+                    <h2>Langkah 2: Rekapitulasi Pemeriksaan</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="kolom-no">No.</th>
+                                <th class="table-wrapper">Deskripsi</th>
+                                <th class="kolom-penilaian">Penilaian Terhadap Kelaikan</th>
+                                <th class="table-wrapper">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td class="kolom-no">1.</td>
+                            <td><textarea rows="2"></textarea></td>
+                            <td class="penilaian-group">
+                                <label><input type="radio" name="penilaian_1" value="sesuai" class="hidden-radio">
+                                <span class="penilaian-btn">Sesuai</span></label>
+                                <label><input type="radio" name="penilaian_1" value="tidak" class="hidden-radio">
+                                <span class="penilaian-btn">Tidak</span></label>
+                            </td>
+                            <td><textarea rows="2"></textarea></td>
+                        </tr> 
+                        <tr>
+                            <td class="kolom-no">2.</td>
+                            <td><textarea rows="2"></textarea></td>
+                            <td class="penilaian-group">
+                                <label><input type="radio" name="penilaian_2" value="sesuai" class="hidden-radio">
+                                <span class="penilaian-btn">Sesuai</span></label>
+                                <label><input type="radio" name="penilaian_2" value="tidak" class="hidden-radio">
+                                <span class="penilaian-btn">Tidak</span></label>
+                            </td>
+                            <td><textarea rows="2"></textarea></td>
+                        </tr> 
+                        <tr>
+                            <td class="kolom-no">3.</td>
+                            <td><textarea rows="2"></textarea></td>
+                            <td class="penilaian-group">
+                                <label><input type="radio" name="penilaian_3" value="sesuai" class="hidden-radio">
+                                <span class="penilaian-btn">Sesuai</span></label>
+                                <label><input type="radio" name="penilaian_3" value="tidak" class="hidden-radio">
+                                <span class="penilaian-btn">Tidak</span></label>
+                            </td>
+                            <td><textarea rows="2"></textarea></td>
+                        </tr> 
+                        <tr>
+                            <td class="kolom-no">4.</td>
+                            <td><textarea rows="2"></textarea></td>
+                            <td class="penilaian-group">
+                                <label><input type="radio" name="penilaian_4" value="sesuai" class="hidden-radio">
+                                <span class="penilaian-btn">Sesuai</span></label>
+                                <label><input type="radio" name="penilaian_4" value="tidak" class="hidden-radio">
+                                <span class="penilaian-btn">Tidak</span></label>
+                            </td>
+                            <td><textarea rows="2"></textarea></td>
+                        </tr> 
+                        <tr>
+                            <td class="kolom-no">5.</td>
+                            <td><textarea rows="2"></textarea></td>
+                            <td class="penilaian-group">
+                                <label><input type="radio" name="penilaian_5" value="sesuai" class="hidden-radio">
+                                <span class="penilaian-btn">Sesuai</span></label>
+                                <label><input type="radio" name="penilaian_5" value="tidak" class="hidden-radio">
+                                <span class="penilaian-btn">Tidak</span></label>
+                            </td>
+                            <td><textarea rows="2"></textarea></td>
+                        </tr> 
+                        </tbody>
+                    </table>
+
+                    <div style="text-align: right; margin-top: 10px;">
+                        <button type="button" id="tambah-baris-rekap" class="btn-secondary">
+                            + Tambah Baris
+                        </button>
+                    </div>
+
+                    <div class="section-title">
+                        <u>Catatan Pemeriksa Peralatan Pencampur Beton Semen (Batching Plant):</u>
+                    </div>
+                    <div class="notes-area">
+                        <textarea rows="5" placeholder="Masukkan catatan pemeriksaan di sini..."></textarea>
+                    </div>
+                    <div class="section-title summary-title">
+                        <u>Kesimpulan dan Saran Pemeriksa:</u>
+                    </div>
+
+                    <table class="summary-table">
+                    <tbody>
+                        <tr>
+                            <td class="kolom-no">1.</td>
+                            <td class="description-cell">Harus Diperbaiki Tahap III<br>(terhadap komponen yang rusak)</td>
+                            <td class="checkbox-cell">
+                                <input type="checkbox" name="kesimpulan_1" id="kesimpulan_1">
+                                <label for="kesimpulan_1" class="custom-checkbox"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="kolom-no">2.</td>
+                            <td class="description-cell">Laik Produksi</td>
+                            <td class="checkbox-cell">
+                                <input type="checkbox" name="kesimpulan_2" id="kesimpulan_2">
+                                <label for="kesimpulan_2" class="custom-checkbox"></label>
+                            </td>
+                        </tr>
+                    </tbody>
+                    </table>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary prev-step" data-prev="step-1"> &laquo; Kembali</button>
+                        <button type="button" class="btn-primary next-step" data-next="step-3">Lanjut</button>
+                    </div>
+
+                </section>
+            </div>
+
+<!-- #region Langkah 3-->
+            <div id="step-3" class="form-step hidden">
+                <section class="form-section">
+                    <h2>Langkah 3: Validasi Pemeriksaan</h2>
+                            
+                    <div class="signature-block">
+                        <h3>Petugas Pemeriksa</h3>
+                        <table class="signature-table">
+                            <thead>
+                                <tr>
+                                    <th class="table-wrapper">Nama</th>
+                                    <th class="table-wrapper">Jabatan</th>
+                                    <th class="table-wrapper">Tanggal</th>
+                                    <th class="table-wrapper">Tanda Tangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                    <tr>
+                                    <td><input type="text" name="pemeriksa_nama" placeholder="Nama Lengkap"></td>
+                                    <td><input type="text" name="pemeriksa_jabatan" placeholder="Jabatan Pemeriksa"></td>
+                                    <td><input type="date" name="pemeriksa_tanggal"></td>
+                                    <td>
+                                    <div class="ttd-container">
+                                        <button type="button" class="ttd-btn" data-ttd-for="ttdCanvas1">Input</button>
+                                        <input type="hidden" id="ttdData1" name="tanda_tangan_1">
+                                        <img id="ttdPreview1" class="ttd-preview" style="max-width: 100px; display: none;">
+                                    </div>
+                                    <div id="ttdModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close-btn">&times;</span>
+                                            <h3>Tanda Tangan Digital</h3>
+                                            <canvas id="ttdCanvas" width="400" height="150" style="border: 1px solid #000;"></canvas>
+                                            <div class="modal-actions">
+                                                <button type="button" id="clearTtdBtn">Bersihkan</button>
+                                                <button type="button" id="saveTtdBtn">Simpan TTD</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </td>
+                                    </tr>
+
+                                    <tr>
+                                    <td><input type="text" name="pemeriksa_nama" placeholder="Nama Lengkap"></td>
+                                    <td><input type="text" name="pemeriksa_jabatan" placeholder="Jabatan Pemeriksa"></td>
+                                    <td><input type="date" name="pemeriksa_tanggal"></td>
+                                    <td>
+                                    <div class="ttd-container">
+                                        <button type="button" class="ttd-btn" data-ttd-for="ttdCanvas1">Input</button>
+                                        <input type="hidden" id="ttdData1" name="tanda_tangan_1">
+                                        <img id="ttdPreview1" class="ttd-preview" style="max-width: 100px; display: none;">
+                                    </div>
+                                    <div id="ttdModal" class="modal">
+                                        <div class="modal-content">
+                                            <span class="close-btn">&times;</span>
+                                            <h3>Tanda Tangan Digital</h3>
+                                            <canvas id="ttdCanvas" width="400" height="150" style="border: 1px solid #000;"></canvas>
+                                            <div class="modal-actions">
+                                                <button type="button" id="clearTtdBtn">Bersihkan</button>
+                                                <button type="button" id="saveTtdBtn">Simpan TTD</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </td>
+                                    </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary prev-step" data-prev="step-2"> &laquo; Kembali</button>
+                        <button type="submit" class="btn-primary">Selesai &amp; Kirim</button>
+                    </div>
+                </section>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    // =======================================================
+    // === VARIABEL DAN ELEMEN UTAMA FORMULIR MULTI-LANGKAH ===
+    // =======================================================
+    const nextButtons = document.querySelectorAll('.next-step');
+    const prevButtons = document.querySelectorAll('.prev-step');
+    const stepIndicators = document.querySelectorAll('.steps-indicator .step');
+    const rows = document.querySelectorAll('tbody tr[data-row]');
+
+    // START: TAMBAHAN UNTUK TAMBAH BARIS
+    const tombolTambahBaris = document.getElementById('tambah-baris-rekap');
+    const tabelBodyRekap = document.querySelector('#step-2 table tbody');
+    // END: TAMBAHAN UNTUK TAMBAH BARIS
+
+    // === ELEMEN KESIMPULAN OTOMATIS (LANGKAH 1) ===
+    const radioKesimpulanLaik = document.querySelector('input[name="kesimpulan_mutu"][value="laik"]');
+    const radioKesimpulanTidakLaik = document.querySelector('input[name="kesimpulan_mutu"][value="tidak_laik"]');
+    // Asumsi tombol "Baik/Tidak Baik" pada Kesimpulan Langkah 1 memiliki ID ini
+    const btnBaik = document.getElementById('btn-kesimpulan-baik'); 
+    const btnTidakBaik = document.getElementById('btn-kesimpulan-tidakbaik'); 
+    // ===========================================
+
+    // START: PENAMBAHAN UNTUK KONTROL TOMBOL LANJUT & PDF
+    const tombolLanjutLangkah1 = document.querySelector('[data-next="step-2"]'); // Pilih tombol 'Lanjut' di Langkah 1
+    const tombolSimpanPDFLangkah1  = document.getElementById('simpanPdfBtn'); // Asumsi tombol Simpan ke PDF adalah tombol pertama di div action
+    // END: PENAMBAHAN UNTUK KONTROL TOMBOL LANJUT & PDF
+
+    // ===========================================
+    
+    // ===========================================
+    // === VARIABEL DAN ELEMEN TANDA TANGAN (TTD) ===
+    // ===========================================
+    const ttdModal = document.getElementById('ttdModal');
+    const closeBtn = document.querySelector('.close-btn');
+    const ttdCanvas = document.getElementById('ttdCanvas');
+    const clearTtdBtn = document.getElementById('clearTtdBtn');
+    const saveTtdBtn = document.getElementById('saveTtdBtn');
+
+    // Pastikan elemen kanvas ada sebelum mencoba mendapatkan konteks
+    const ctx = ttdCanvas ? ttdCanvas.getContext('2d') : null;
+
+    let currentTtdId = null; // Menyimpan ID kanvas yang sedang diisi (cth: 'ttdCanvas1')
+    let isDrawing = false;
+    
+    if (ctx) {
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000'; // Warna tinta
+    }
+    // ===========================================
+
+    // === TAMBAHKAN FUNGSI NORMALISASI DI SINI ===
+    function normalizeRowName(rowName) {
+        if (!rowName) return '';
+        return rowName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    // === FUNGSI TAMBAHAN UNTUK CETAK KE PDF ===
+    function printFormToPdf() {
+        // Fungsi ini memicu dialog Cetak browser (yang memungkinkan 'Simpan sebagai PDF')
+        window.print();
+    }
+    // ===========================================
+
+    // Fungsi untuk memperbarui indikator langkah
+    const updateIndicators = (currentStepId) => {
+        const currentStepNumber = parseInt(currentStepId.replace('step-', ''));
+        stepIndicators.forEach(indicator => {
+            const indicatorStep = parseInt(indicator.dataset.step);
+            if (indicatorStep === currentStepNumber) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        });
+    };
+
+    // Handler untuk tombol Lanjut
+    nextButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const currentStep = e.target.closest('.form-step');
+            const nextStepId = button.dataset.next;
+            const nextStep = document.getElementById(nextStepId);
+
+            if (nextStep) {
+                currentStep.classList.add('hidden');
+                nextStep.classList.remove('hidden');
+                updateIndicators(nextStepId);
+            }
+        });
+    });
+
+    // Handler untuk tombol Kembali
+    prevButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const currentStep = e.target.closest('.form-step');
+            const prevStepId = button.dataset.prev;
+            const prevStep = document.getElementById(prevStepId);
+
+            if (prevStep) {
+                currentStep.classList.add('hidden');
+                prevStep.classList.remove('hidden');
+                updateIndicators(prevStepId);
+            }
+        });
+    });
+
+    // --- FUNGSI 2: TAMBAH BARIS DINAMIS UNTUK REKAPITULASI (LANGKAH 2) ---
+    function tambahBarisRekap() {
+        if (!tabelBodyRekap) {
+            console.error("Tabel body untuk Langkah 2 tidak ditemukan.");
+            return;
+        }
+
+        const barisTerakhir = tabelBodyRekap.querySelector('tr:last-child');
+        if (!barisTerakhir) return;
+
+        const barisBaru = barisTerakhir.cloneNode(true);
+        const teksNomorLama = barisTerakhir.querySelector('td:first-child').textContent.replace('.', '').trim();
+        const nomorBarisLama = parseInt(teksNomorLama.match(/\d+/)) || 0;
+        const nomorBarisBaru = nomorBarisLama + 1;
+
+        barisBaru.querySelector('td:first-child').textContent = `${nomorBarisBaru}.`;
+
+        barisBaru.querySelectorAll('textarea, input[type="radio"]').forEach((input) => {
+            if (input.tagName === 'TEXTAREA') {
+                input.value = '';
+            }
+            if (input.type === 'radio') {
+                input.name = `penilaian_${nomorBarisBaru}`;
+                input.checked = false;
+            }
+        });
+
+        tabelBodyRekap.appendChild(barisBaru);
+        barisBaru.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+    if (tombolTambahBaris) {
+        tombolTambahBaris.addEventListener('click', tambahBarisRekap);
+    }
+
+    // --- FUNGSI 3: PENILAIAN OTOMATIS  (LANGKAH 1) ---      
+    function checkRowValue(rowName) {
+        const normalizedRowName = normalizeRowName(rowName);
+        const minInput = document.getElementById(`${normalizedRowName}-min`);
+        const maxInput = document.getElementById(`${normalizedRowName}-max`);
+        const hasilInput = document.getElementById(`${normalizedRowName}-hasil`);
+
+        if (!maxInput || !hasilInput) return;
+
+        const radioSesuai = document.querySelector(`input[name="${normalizedRowName}-penilaian"][value="sesuai"]`);
+        const radioTidak = document.querySelector(`input[name="${normalizedRowName}-penilaian"][value="tidak"]`);
+
+        const min = minInput ? parseFloat(minInput.value) : NaN;
+        const max = parseFloat(maxInput.value);
+        const hasil = parseFloat(hasilInput.value);
+
+        if (isNaN(hasil) || isNaN(max)) {
+            if (radioSesuai) radioSesuai.checked = false;
+            if (radioTidak) radioTidak.checked = false;
+            updateKesimpulanOtomatis(); 
+            return;
+        }
+        let isSesuai = false;
+        const minValid = minInput && !isNaN(min);
+
+        if (minValid) {
+            isSesuai = (hasil >= min && hasil <= max);
+        } else {
+            isSesuai = (hasil <= max);
+        }
+
+        if (radioSesuai && radioTidak) {
+            radioSesuai.checked = isSesuai;
+            radioTidak.checked = !isSesuai;
+        }
+
+        updateKesimpulanOtomatis();
+    }
+    
+    // --- FUNGSI 4: KESIMPULAN OTOMATIS (LAIK / TIDAK LAIK) (LANGKAH 1) ---
+    function updateKesimpulanOtomatis() {
+        if (!radioKesimpulanLaik || !radioKesimpulanTidakLaik) return;
+        let semuaSesuai = true;
+        let semuaTerisi = true;
+        const semuaGrupPenilaian = document.querySelectorAll('#step-1 .radio-group');
+        const semuaBaris = document.querySelectorAll('tbody tr[data-row]');
+
+        // 1. Cek Kelengkapan Input "Hasil Pengukuran"
+        for (const row of semuaBaris) {
+            const rowName = row.dataset.row;
+            const normalizedRowName = normalizeRowName(rowName);
+            const hasilInput = document.getElementById(`${normalizedRowName}-hasil`);
+
+            if (!hasilInput || hasilInput.value.trim() === '') {
+                semuaTerisi = false;
+                break;
+            }
+        }
+
+        // 2. Cek Hasil Penilaian
+        if (semuaTerisi) {
+            for (const grup of semuaGrupPenilaian) {
+                const radioSesuai = grup.querySelector('input[value="sesuai"]');
+                const radioTidak = grup.querySelector('input[value="tidak"]');
+
+                if (radioTidak && radioTidak.checked) {
+                    semuaSesuai = false;
+                    break;
+                }
+                
+                if ((radioSesuai && !radioSesuai.checked) && (radioTidak && !radioTidak.checked)) {
+                    semuaSesuai = false;
+                    break;
+                }
+            }
+        }
+        
+        // 3. Tentukan Kesimpulan dan Kontrol Tombol
+        if (!semuaTerisi) {
+            radioKesimpulanLaik.checked = false;
+            radioKesimpulanTidakLaik.checked = false;
+        } else if (semuaSesuai) {
+            radioKesimpulanLaik.checked = true;
+            radioKesimpulanTidakLaik.checked = false;
+        } else {
+            radioKesimpulanLaik.checked = false;
+            radioKesimpulanTidakLaik.checked = true;
+        }
+        
+        // Kontrol tombol Kesimpulan Langkah 1 (jika menggunakan elemen <button>)
+        if (btnBaik && btnTidakBaik) {
+            if (!semuaTerisi) {
+                btnBaik.setAttribute('disabled', 'disabled');
+                btnTidakBaik.setAttribute('disabled', 'disabled');
+            } else {
+                btnBaik.removeAttribute('disabled');
+                btnTidakBaik.removeAttribute('disabled');
+            }
+        }
+
+        // START: LOGIKA KONTROL TOMBOL LANJUT & SIMPAN PDF
+        if (tombolLanjutLangkah1 && tombolSimpanPDFLangkah1) {
+            if (radioKesimpulanTidakLaik.checked) {
+                // 1. Matikan tombol Lanjut
+                tombolLanjutLangkah1.setAttribute('disabled', 'disabled');
+                tombolLanjutLangkah1.style.opacity = '0.5'; 
+                tombolLanjutLangkah1.style.cursor = 'not-allowed';
+
+                // 2. Beri visual agar Simpan PDF dipilih (Opsional: Tambahkan class CSS 'highlight-pdf')
+                if (tombolSimpanPDFLangkah1) {
+                    tombolSimpanPDFLangkah1.classList.add('highlight-pdf');
+                }
+            } else {
+                // 3. Aktifkan kembali tombol Lanjut
+                tombolLanjutLangkah1.removeAttribute('disabled');
+                tombolLanjutLangkah1.style.opacity = '1';
+                tombolLanjutLangkah1.style.cursor = 'pointer';
+
+                // Hapus penyorotan pada tombol Simpan PDF
+                if (tombolSimpanPDFLangkah1) {
+                    tombolSimpanPDFLangkah1.classList.remove('highlight-pdf');
+                }
+            }
+        }
+        // END: LOGIKA KONTROL TOMBOL LANJUT & SIMPAN PDF
+    }
+
+    // ===========================================
+    // === FUNGSI LOGIKA TANDA TANGAN DIGITAL (TTD) ===
+    // ===========================================
+    
+    // Cek apakah elemen TTD ada sebelum menjalankan logika TTD
+    if (ttdCanvas && ctx) {
+        
+        // Fungsi untuk inisialisasi/membersihkan kanvas
+        function initializeCanvas() {
+            ctx.clearRect(0, 0, ttdCanvas.width, ttdCanvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, ttdCanvas.width, ttdCanvas.height);
+        }
+
+        // === LOGIKA MENGGAMBAR (Mouse & Touch Events) ===
+        function getCanvasPoint(e) {
+            const rect = ttdCanvas.getBoundingClientRect();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            const x = (clientX - rect.left) * (ttdCanvas.width / rect.width);
+            const y = (clientY - rect.top) * (ttdCanvas.height / rect.height);
+            return { x, y };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const point = getCanvasPoint(e);
+            ctx.beginPath();
+            ctx.moveTo(point.x, point.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); 
+            const point = getCanvasPoint(e);
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                ctx.closePath();
+                isDrawing = false;
+            }
+        }
+
+        // Listeners untuk Menggambar
+        ttdCanvas.addEventListener('mousedown', startDrawing);
+        ttdCanvas.addEventListener('mousemove', draw);
+        ttdCanvas.addEventListener('mouseup', stopDrawing);
+        ttdCanvas.addEventListener('mouseout', stopDrawing);
+        ttdCanvas.addEventListener('touchstart', startDrawing);
+        ttdCanvas.addEventListener('touchmove', draw);
+        ttdCanvas.addEventListener('touchend', stopDrawing);
+
+        // === LOGIKA KONTROL MODAL ===
+
+        // 1. Membuka Modal
+        document.querySelectorAll('.ttd-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                currentTtdId = e.target.getAttribute('data-ttd-for'); // Cth: 'ttdCanvas1'
+                if (ttdModal) {
+                    ttdModal.style.display = 'block';
+                    initializeCanvas();
+                }
+            });
+        });
+
+        // 2. Menutup Modal
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                ttdModal.style.display = 'none';
+                currentTtdId = null;
+            });
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === ttdModal) {
+                ttdModal.style.display = 'none';
+                currentTtdId = null;
+            }
+        });
+
+        // 3. Tombol Bersihkan
+        if (clearTtdBtn) {
+            clearTtdBtn.addEventListener('click', initializeCanvas);
+        }
+
+        // 4. Tombol Simpan TTD
+        if (saveTtdBtn) {
+            saveTtdBtn.addEventListener('click', () => {
+                const ttdDataURL = ttdCanvas.toDataURL('image/png'); 
+                
+                // Cari input hidden dan preview image yang sesuai
+                const hiddenInputId = currentTtdId.replace('Canvas', 'Data');
+                const hiddenInput = document.getElementById(hiddenInputId);
+                const previewImgId = currentTtdId.replace('Canvas', 'Preview');
+                const previewImg = document.getElementById(previewImgId);
+                const ttdButton = document.querySelector(`.ttd-btn[data-ttd-for="${currentTtdId}"]`);
+
+                if (hiddenInput) {
+                    hiddenInput.value = ttdDataURL;
+                }
+                
+                if (previewImg) {
+                    previewImg.src = ttdDataURL;
+                    previewImg.style.display = 'inline';
+                    if (ttdButton) ttdButton.textContent = 'Ubah TTD'; 
+                }
+                
+                ttdModal.style.display = 'none';
+                currentTtdId = null;
+                alert('Tanda tangan berhasil disimpan.');
+            });
+        }
+        
+        // Inisialisasi kanvas saat dimuat
+        initializeCanvas(); 
+    }
+    // ===========================================
+    // === INITIALIZATION & EVENT LISTENERS FORMULIR ===
+    // ===========================================
+
+    // Tambahkan event listener ke setiap input yang relevan (min, max, hasil)
+    rows.forEach(row => {
+        const rowName = row.dataset.row;
+        const maxInput = document.getElementById(`${rowName}-max`);
+        const minInput = document.getElementById(`${rowName}-min`);
+        const hasilInput = document.getElementById(`${rowName}-hasil`);
+        const listener = () => checkRowValue(rowName);
+
+        if (hasilInput) {
+            hasilInput.addEventListener('input', listener);
+        }
+        if (maxInput) {
+            maxInput.addEventListener('input', listener);
+        }
+        if (minInput) {
+            minInput.addEventListener('input', listener);
+        }
+    });
+
+    // ===========================================
+    // === KONTROL TOMBOL SUBMIT/KIRIM (Langkah 3) ===
+    // ===========================================
+    const submitButton = document.querySelector('button[type="submit"]');
+
+    if (submitButton) {
+        submitButton.addEventListener('click', (e) => {
+            // HENTIKAN proses pengiriman form sementara (untuk debugging/demo)
+            // Hapus baris ini jika Anda ingin data dikirim ke server!
+            // e.preventDefault(); 
+            
+            // Lakukan validasi terakhir di sini (opsional)
+
+            // Panggil fungsi cetak/simpan PDF
+            printFormToPdf();
+            
+            // Opsi: Tambahkan delay sebentar sebelum submit form
+            // (jika Anda ingin formulir dikirim setelah cetak)
+            // setTimeout(() => { e.target.closest('form').submit(); }, 500);
+        });
+    }
+
+    // Logika untuk menampilkan semua step saat mencetak (agar Langkah 2 dan 3 terlihat)
+    window.addEventListener('beforeprint', function() {
+        // Tampilkan semua langkah formulir
+        const formSteps = document.querySelectorAll('.form-step');
+        formSteps.forEach(step => {
+            step.classList.add('print-visible');
+        });
+
+        // Sembunyikan semua tombol dan elemen input/interaktif (diatur di CSS)
+    });
+
+    window.addEventListener('afterprint', function() {
+        // Sembunyikan kembali langkah yang sebelumnya tersembunyi
+        const formSteps = document.querySelectorAll('.form-step');
+        formSteps.forEach(step => {
+             // Hapus class print-visible jika Anda ingin mengembalikan tampilan awal
+             step.classList.remove('print-visible');
+        });
+    });
+
+    // Jalankan semua pengecekan saat halaman pertama kali dimuat
+    updateIndicators('step-1');
+    rows.forEach(row => {
+        checkRowValue(row.dataset.row);
+    });
+
+ // 2. Logika Upload Foto (Inti dari permintaan Anda)
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Ambil ID baris (misalnya 'slump-foto')
+            const inputId = this.id;
+            // Dapatkan elemen status (span) yang sesuai (misalnya 'slump-foto-status')
+            const statusElement = document.getElementById(inputId + '-status');
+            // Dapatkan elemen preview gambar (misalnya 'preview-slump-foto')
+            const previewElement = document.getElementById('preview-' + inputId);
+
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const fileName = file.name;
+                const maxSize = parseInt(this.getAttribute('data-max-size')); // Contoh: 5242880 bytes (5MB)
+
+                // a. Pengecekan Ukuran File
+                if (file.size > maxSize) {
+                    statusElement.textContent = `Gagal! Ukuran > ${maxSize / 1024 / 1024} MB.`;
+                    statusElement.style.color = 'red';
+                    previewElement.style.display = 'none';
+                    return;
+                }
+                
+                // b. Update Status Menjadi "Foto diupload"
+                statusElement.textContent = 'Foto diupload: ' + fileName;
+                statusElement.style.color = 'green';
+                
+                // c. Tampilkan Preview Foto
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewElement.src = e.target.result;
+                    previewElement.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+
+            } else {
+                // Ketika file dibatalkan atau dihapus
+                statusElement.textContent = 'Belum ada file.';
+                statusElement.style.color = '';
+                previewElement.style.display = 'none';
+                previewElement.src = '';
+            }
+        });
+    });  
+    
+function simpanLangkah1KePdf() {
+    // 1. Targetkan elemen utama Langkah 1
+    const element = document.getElementById('step-1');
+    if (!element) {
+        console.error('Elemen #step-1 tidak ditemukan.');
+        return;
+    }
+
+    // 2. Sembunyikan elemen interaktif yang tidak diinginkan di PDF
+    const elementsToHide = element.querySelectorAll('.form-actions, .input-group-file, .button-upload, input[type="file"], .uploaded-image-preview');
+    elementsToHide.forEach(el => el.classList.add('hide-for-pdf'));
+    
+    // (Anda harus menambahkan CSS untuk class 'hide-for-pdf')
+
+    // 3. Konfigurasi dan Konversi
+    const options = {
+        margin: 10,
+        filename: 'Langkah1_PengujianMutu_Beton.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            scrollY: 0,
+            useCORS: true 
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Panggil fungsi konversi dan simpan
+    html2pdf().set(options).from(element).save().then(() => {
+        // Setelah selesai (PDF didownload), tampilkan kembali elemen yang disembunyikan
+        elementsToHide.forEach(el => el.classList.remove('hide-for-pdf'));
+    });
+}
+
+// ===============================================
+// === HUBUNGKAN FUNGSI KE TOMBOL BARU ===
+// ===============================================
+const simpanPdfBtn = document.getElementById('simpanPdfBtn');
+
+if (simpanPdfBtn) {
+    simpanPdfBtn.addEventListener('click', simpanLangkah1KePdf);
+}
+
+});
+
+ </script>
+
+</body>
+</html>
